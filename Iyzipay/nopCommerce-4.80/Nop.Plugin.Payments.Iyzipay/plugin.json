@@ -1,0 +1,11 @@
+{
+  "Group": "Payment methods",
+  "FriendlyName": "Iyzipay CheckoutForm",
+  "SystemName": "Payments.IyzipayCheckoutForm",
+  "Version": "4.90.1",
+  "SupportedVersions": [ "4.80", "4.90" ],
+  "Author": "Iyzico",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Payments.Iyzipay.dll",
+  "Description": "Iyzipay payment gateway integration for nopCommerce"
+}

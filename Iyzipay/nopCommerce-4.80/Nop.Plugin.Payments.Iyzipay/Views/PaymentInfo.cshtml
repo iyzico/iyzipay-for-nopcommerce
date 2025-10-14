@@ -1,0 +1,179 @@
+@model PaymentInfoModel
+
+<div class="payment-method-body">
+        <div class="payment-method-description">
+            @Model.DescriptionText
+        </div>
+        
+        @if (Model.PaymentFormMode == "iframe" || Model.PaymentFormMode == "popup")
+        {
+            <div id="iyzipay-checkout-form" class="@(Model.PaymentFormMode == "popup" ? "popup" : "responsive")"></div>
+        }
+    </div>
+
+<script>
+    $(document).ready(function () {
+        @if (Model.PaymentFormMode == "iframe" || Model.PaymentFormMode == "popup")
+        {
+            <text>
+            // CheckoutForm initialize edilecek
+            initializeCheckoutForm();
+            </text>
+        }
+        @if (Model.PaymentFormMode == "redirect")
+        {
+            <text>
+            // Redirect için form submit edilecek
+            setupRedirectPayment();
+            </text>
+        }
+    });
+    
+    function initializeCheckoutForm() {
+        $.ajax({
+            url: '@Url.Action("ProcessPayment", "PaymentIyzipay")',
+            type: 'POST',
+            data: {
+                mode: '@Model.PaymentFormMode',
+                orderGuid: '@Model.OrderGuid'
+            },
+            beforeSend: function(xhr) {
+                var token = $('input[name="__RequestVerificationToken"]').val();
+                if (token) {
+                    xhr.setRequestHeader('RequestVerificationToken', token);
+                } else {
+                    console.error('Iyzipay: Antiforgery token not found');
+                }
+            },
+            success: function (response) {
+                if (response.success) {
+                    $('#iyzipay-checkout-form').html(response.checkoutFormContent);
+                } else {
+                    console.error('Iyzipay: Checkout form initialization failed:', response.message);
+                    alert('Checkout form initialization failed: ' + response.message);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Iyzipay: AJAX error occurred:', {
+                    status: status,
+                    error: error,
+                    responseText: xhr.responseText,
+                    statusCode: xhr.status
+                });
+                alert('An error occurred while initializing checkout form');
+            }
+        });
+    }
+    
+    function setupRedirectPayment() {
+        // Redirect için form oluştur
+        var form = $('<form>', {
+            'method': 'POST',
+            'action': '@Url.Action("ProcessPayment", "PaymentIyzipay")',
+            'style': 'display: none;'
+        });
+        
+        // Gerekli input'ları ekle
+        form.append($('<input>', {
+            'type': 'hidden',
+            'name': 'mode',
+            'value': '@Model.PaymentFormMode'
+        }));
+        
+        form.append($('<input>', {
+            'type': 'hidden',
+            'name': 'orderGuid',
+            'value': '@Model.OrderGuid'
+        }));
+        
+        $('body').append(form);
+        
+        // Form submit et
+        form.submit();
+    }
+</script>
+
+<style>
+    .payment-method {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+    
+    .payment-method-header {
+        background-color: #f5f5f5;
+        padding: 15px;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .payment-method-name {
+        margin: 0;
+    }
+    
+    .payment-method-name input[type="radio"] {
+        margin-right: 10px;
+    }
+    
+    .payment-method-name label {
+        font-weight: bold;
+        margin: 0;
+        cursor: pointer;
+    }
+    
+    .payment-method-body {
+        padding: 15px;
+    }
+    
+    .payment-method-description {
+        margin-bottom: 15px;
+        color: #666;
+    }
+    
+    .pay-with-iyzico-section {
+        margin-bottom: 15px;
+    }
+    
+    #pay-with-iyzico-btn {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    #pay-with-iyzico-btn:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+    }
+    
+    #iyzipay-checkout-form {
+        margin-top: 15px;
+    }
+    
+    #iyzipay-checkout-form.responsive {
+        width: 100%;
+        min-height: 400px;
+    }
+    
+    #iyzipay-checkout-form.popup {
+        width: 100%;
+        min-height: 400px;
+    }
+    
+    /* Iyzipay standart CSS class'ları */
+    .responsive {
+        width: 100%;
+        min-height: 400px;
+    }
+    
+    .popup {
+        width: 100%;
+        min-height: 400px;
+    }
+    
+    .payment-info-next-step-button {
+        display: none !important;
+    }
+</style>
+

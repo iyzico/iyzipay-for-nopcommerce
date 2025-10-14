@@ -1,0 +1,9 @@
+[
+    {
+      "Type": "Plugin",
+      "SupportedVersion": "4.80",
+      "DirectoryPath": "Iyzipay/nopCommerce-4.80/Payments.Iyzipay/",
+      "SystemName": "Payments.Iyzipay",
+      "SourceDirectoryPath": "Iyzipay/nopCommerce-4.80/Nop.Plugin.Payments.Iyzipay/"
+    }
+  ]
