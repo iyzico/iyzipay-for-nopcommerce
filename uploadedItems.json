@@ -5,5 +5,12 @@
       "DirectoryPath": "Iyzipay/nopCommerce-4.80/Payments.Iyzipay/",
       "SystemName": "Payments.Iyzipay",
       "SourceDirectoryPath": "Iyzipay/nopCommerce-4.80/Nop.Plugin.Payments.Iyzipay/"
+    },
+    {
+      "Type": "Plugin",
+      "SupportedVersion": "4.90",
+      "DirectoryPath": "Iyzipay/nopCommerce-4.90/Payments.Iyzipay/",
+      "SystemName": "Payments.Iyzipay",
+      "SourceDirectoryPath": "Iyzipay/nopCommerce-4.90/Nop.Plugin.Payments.Iyzipay/"
     }
   ]
