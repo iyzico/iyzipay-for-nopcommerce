@@ -45,10 +45,11 @@ public class PaymentInfoViewComponent : NopViewComponent
     {
         var orderGuid = Guid.Empty;
         
-        var processPaymentRequest = await _orderProcessingService.GetProcessPaymentRequestAsync();
-        if (processPaymentRequest != null)
+        // Try to get OrderGuid from session
+        var sessionOrderGuidBytes = HttpContext.Session.Get<byte[]>("IyzipayTempOrderGuid");
+        if (sessionOrderGuidBytes != null && sessionOrderGuidBytes.Length == 16)
         {
-            orderGuid = processPaymentRequest.OrderGuid;
+            orderGuid = new Guid(sessionOrderGuidBytes);
         }
         else
         {
