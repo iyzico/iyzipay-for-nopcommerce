@@ -46,7 +46,7 @@ public class PaymentInfoViewComponent : NopViewComponent
         var orderGuid = Guid.Empty;
         
         // Try to get OrderGuid from session
-        var sessionOrderGuidBytes = HttpContext.Session.Get<byte[]>("IyzipayTempOrderGuid");
+        var sessionOrderGuidBytes = await HttpContext.Session.GetAsync<byte[]>("IyzipayTempOrderGuid");
         if (sessionOrderGuidBytes != null && sessionOrderGuidBytes.Length == 16)
         {
             orderGuid = new Guid(sessionOrderGuidBytes);
@@ -54,7 +54,7 @@ public class PaymentInfoViewComponent : NopViewComponent
         else
         {
             orderGuid = Guid.NewGuid();
-            HttpContext.Session.Set("IyzipayTempOrderGuid", orderGuid.ToByteArray());
+            await HttpContext.Session.SetAsync("IyzipayTempOrderGuid", orderGuid.ToByteArray());
         }
 
         var model = new PaymentInfoModel

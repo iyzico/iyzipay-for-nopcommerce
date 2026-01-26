@@ -52,7 +52,7 @@
                     </div>
                     <div class="col-md-9">
                         <div class="input-group">
-                            <nop-editor asp-for="WebhookUrl" asp-disabled="true" />
+                            <input asp-for="WebhookUrl" class="form-control" readonly disabled />
                             <span class="input-group-btn">
                                 <button type="button" class="btn btn-default" onclick="copyToClipboard('@Model.WebhookUrl')">
                                     <i class="fa fa-copy"></i> @T("Admin.Common.Copy")
