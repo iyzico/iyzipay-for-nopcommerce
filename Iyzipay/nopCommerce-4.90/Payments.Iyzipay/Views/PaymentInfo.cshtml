@@ -31,7 +31,7 @@
     
     function initializeCheckoutForm() {
         $.ajax({
-            url: '@Url.Action("ProcessPayment", "PaymentIyzipay")',
+            url: '@Url.RouteUrl("Plugin.Payments.Iyzipay.ProcessPayment")',
             type: 'POST',
             data: {
                 mode: '@Model.PaymentFormMode',
@@ -69,7 +69,7 @@
         // Redirect için form oluştur
         var form = $('<form>', {
             'method': 'POST',
-            'action': '@Url.Action("ProcessPayment", "PaymentIyzipay")',
+            'action': '@Url.RouteUrl("Plugin.Payments.Iyzipay.ProcessPayment")',
             'style': 'display: none;'
         });
         
