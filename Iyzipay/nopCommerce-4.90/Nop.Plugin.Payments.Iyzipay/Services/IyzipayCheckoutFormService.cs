@@ -12,6 +12,7 @@ using Nop.Plugin.Payments.Iyzipay.Models;
 using Nop.Services.Orders;
 using Nop.Services.Payments;
 using Nop.Services.Customers;
+using Nop.Services.Directory;
 using Nop.Core.Domain.Customers;
 
 namespace Nop.Plugin.Payments.Iyzipay.Services;
@@ -33,6 +34,7 @@ public class IyzipayCheckoutFormService
     private readonly IShoppingCartService _shoppingCartService;
     private readonly IWorkContext _workContext;
     private readonly IOrderTotalCalculationService _orderTotalCalculationService;
+    private readonly ICurrencyService _currencyService;
 
     #endregion
 
@@ -48,7 +50,8 @@ public class IyzipayCheckoutFormService
         IyzipayOrderDataService orderDataService,
         IShoppingCartService shoppingCartService,
         IWorkContext workContext,
-        IOrderTotalCalculationService orderTotalCalculationService)
+        IOrderTotalCalculationService orderTotalCalculationService,
+        ICurrencyService currencyService)
     {
         _orderService = orderService;
         _webHelper = webHelper;
@@ -60,6 +63,7 @@ public class IyzipayCheckoutFormService
         _shoppingCartService = shoppingCartService;
         _workContext = workContext;
         _orderTotalCalculationService = orderTotalCalculationService;
+        _currencyService = currencyService;
     }
 
     #endregion
@@ -90,18 +94,32 @@ public class IyzipayCheckoutFormService
             }
 
             var cartTotalResult = await _orderTotalCalculationService.GetShoppingCartTotalAsync(cart);
-            var cartTotal = cartTotalResult.shoppingCartTotal ?? 0;
+            var cartTotalBase = cartTotalResult.shoppingCartTotal ?? 0;
+
+            // Convert to working currency
+            var workingCurrency = await _workContext.GetWorkingCurrencyAsync();
+            var cartTotal = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(cartTotalBase, workingCurrency);
+
+            // Map currency code
+            var iyzipayCurrency = workingCurrency.CurrencyCode switch
+            {
+                "TRY" => Currency.TRY.ToString(),
+                "USD" => Currency.USD.ToString(),
+                "EUR" => Currency.EUR.ToString(),
+                "GBP" => Currency.GBP.ToString(),
+                _ => Currency.TRY.ToString()
+            };
 
             var options = _configurationService.GetOptions();
             var callbackUrl = $"{_webHelper.GetStoreLocation()}PaymentIyzipay/Confirmation";
-            
+
             var request = new CreateCheckoutFormInitializeRequest
             {
                 Locale = _configurationService.GetLocale(),
-                ConversationId = orderGuid.ToString(),
+                ConversationId = $"{orderGuid}|{customer.Id}",
                 Price = cartTotal.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
                 PaidPrice = cartTotal.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
-                Currency = Currency.TRY.ToString(),
+                Currency = iyzipayCurrency,
                 BasketId = orderGuid.ToString(),
                 PaymentGroup = PaymentGroup.PRODUCT.ToString(),
                 CallbackUrl = callbackUrl,
@@ -120,6 +138,17 @@ public class IyzipayCheckoutFormService
 
             request.Buyer = _dataMapper.CreateBuyerFromCustomer(customer);
             request.BasketItems = await _dataMapper.CreateBasketItemsFromCartAsync(cart);
+
+            // Convert basket item prices to working currency
+            foreach (var item in request.BasketItems)
+            {
+                if (decimal.TryParse(item.Price, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var itemPrice))
+                {
+                    var convertedPrice = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(itemPrice, workingCurrency);
+                    item.Price = convertedPrice.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+                }
+            }
+
             request.ShippingAddress = _dataMapper.CreateShippingAddressFromCustomer(customer);
             request.BillingAddress = _dataMapper.CreateBillingAddressFromCustomer(customer);
 

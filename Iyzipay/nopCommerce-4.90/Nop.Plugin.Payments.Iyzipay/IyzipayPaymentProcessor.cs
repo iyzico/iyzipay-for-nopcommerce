@@ -423,11 +423,12 @@ public class IyzipayPaymentProcessor : BasePlugin, IPaymentMethod
             }
 
             var basketId = checkoutForm.BasketId;
+            var conversationId = checkoutForm.ConversationId;
             var paymentId = checkoutForm.PaymentId;
             var authCode = checkoutForm.AuthCode;
             var installment = checkoutForm.Installment;
             var originalPrice = checkoutForm.Price;
-            
+
             decimal paidPrice;
             if (decimal.TryParse(checkoutForm.PaidPrice, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedPaidPrice))
             {
@@ -444,7 +445,7 @@ public class IyzipayPaymentProcessor : BasePlugin, IPaymentMethod
             {
                 paidPrice = 0;
             }
-            
+
             if (!Guid.TryParse(basketId, out var orderGuid))
             {
                 result.ErrorMessage = "Invalid basket ID format";
@@ -454,17 +455,31 @@ public class IyzipayPaymentProcessor : BasePlugin, IPaymentMethod
             var order = await _orderService.GetOrderByGuidAsync(orderGuid);
             if (order == null)
             {
-                
                 var customer = await _workContext.GetCurrentCustomerAsync();
                 var store = await _storeContext.GetCurrentStoreAsync();
                 var cart = await _shoppingCartService.GetShoppingCartAsync(customer, Core.Domain.Orders.ShoppingCartType.ShoppingCart, store.Id);
-                
+
+                // If cart is empty, session may be lost due to cross-origin POST from Iyzipay (SameSite cookie restriction)
+                // Recover the real customer from ConversationId which contains "orderGuid|customerId"
+                if (!cart.Any() && !string.IsNullOrEmpty(conversationId))
+                {
+                    var parts = conversationId.Split('|');
+                    if (parts.Length > 1 && int.TryParse(parts[1], out var savedCustomerId))
+                    {
+                        customer = await _customerService.GetCustomerByIdAsync(savedCustomerId);
+                        if (customer != null)
+                        {
+                            cart = await _shoppingCartService.GetShoppingCartAsync(customer, Core.Domain.Orders.ShoppingCartType.ShoppingCart, store.Id);
+                        }
+                    }
+                }
+
                 if (!cart.Any())
                 {
                     result.ErrorMessage = "Shopping cart is empty";
                     return result;
                 }
-                
+
                 var paymentRequest = new ProcessPaymentRequest
                 {
                     OrderGuid = orderGuid,
@@ -472,14 +487,14 @@ public class IyzipayPaymentProcessor : BasePlugin, IPaymentMethod
                     CustomerId = customer.Id,
                     PaymentMethodSystemName = "Payments.IyzipayCheckoutForm"
                 };
-                
+
                 var placeOrderResult = await _orderProcessingService.PlaceOrderAsync(paymentRequest);
                 if (placeOrderResult?.PlacedOrder == null || !placeOrderResult.Success)
                 {
-                    result.ErrorMessage = "Failed to create order";
+                    result.ErrorMessage = "Failed to create order: " + string.Join(", ", placeOrderResult?.Errors ?? new List<string>());
                     return result;
                 }
-                
+
                 order = placeOrderResult.PlacedOrder;
             }
 

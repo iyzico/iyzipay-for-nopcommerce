@@ -167,14 +167,16 @@ public class PaymentIyzipayPublicController : BaseController
 
     [HttpPost, HttpGet]
     [AllowAnonymous]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> Confirmation()
     {
         try
-        {   
+        {
             var token = Request.Form["token"].FirstOrDefault();
             if (string.IsNullOrEmpty(token))
             {
-                return BadRequest(new { message = "Missing required parameters - no token found" });
+                _notificationService.ErrorNotification("Ödeme doğrulama hatası: Token bulunamadı");
+                return RedirectToRoute("Homepage");
             }
 
             var result = await _iyzipayPaymentProcessor.ProcessConfirmationAsync(token);
@@ -184,13 +186,14 @@ public class PaymentIyzipayPublicController : BaseController
             }
             else
             {
-                return BadRequest(new { message = result.ErrorMessage });
+                _notificationService.ErrorNotification($"Ödeme hatası: {result.ErrorMessage}");
+                return RedirectToRoute("ShoppingCart");
             }
-
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            _notificationService.ErrorNotification($"Ödeme işlemi sırasında hata oluştu: {ex.Message}");
+            return RedirectToRoute("ShoppingCart");
         }
     }
 
