@@ -15,7 +15,7 @@ Official iyzipay payment gateway integration plugin for nopCommerce e-commerce p
 - ✅ **Multi-language Support** - Turkish and English localization
 - ✅ **Sandbox & Live Environment** - Easy testing and production deployment
 - ✅ **Order Status Management** - Automatic order status updates
-- ✅ **Additional Fee Support** - Configurable payment processing fees.
+- ✅ **Additional Fee Support** - Configurable payment processing fees
 
 ## Requirements
 
