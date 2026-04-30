@@ -9,6 +9,7 @@ using Nop.Core;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Payments;
 using Nop.Plugin.Payments.Iyzipay.Models;
+using Nop.Services.Common;
 using Nop.Services.Orders;
 using Nop.Services.Payments;
 using Nop.Services.Customers;
@@ -35,6 +36,8 @@ public class IyzipayCheckoutFormService
     private readonly IWorkContext _workContext;
     private readonly IOrderTotalCalculationService _orderTotalCalculationService;
     private readonly ICurrencyService _currencyService;
+    private readonly ICustomerService _customerService;
+    private readonly IAddressService _addressService;
 
     #endregion
 
@@ -51,7 +54,9 @@ public class IyzipayCheckoutFormService
         IShoppingCartService shoppingCartService,
         IWorkContext workContext,
         IOrderTotalCalculationService orderTotalCalculationService,
-        ICurrencyService currencyService)
+        ICurrencyService currencyService,
+        ICustomerService customerService,
+        IAddressService addressService)
     {
         _orderService = orderService;
         _webHelper = webHelper;
@@ -64,6 +69,8 @@ public class IyzipayCheckoutFormService
         _workContext = workContext;
         _orderTotalCalculationService = orderTotalCalculationService;
         _currencyService = currencyService;
+        _customerService = customerService;
+        _addressService = addressService;
     }
 
     #endregion
@@ -91,6 +98,19 @@ public class IyzipayCheckoutFormService
                 result.Message = "Sepet boş";
                 result.ErrorMessage = "Sepet boş";
                 return result;
+            }
+
+            // Guest customers have FirstName/LastName on the address, not the Customer entity.
+            // Populate them from the shipping address so iyzico's required contactName can be derived.
+            var isGuest = await _customerService.IsGuestAsync(customer);
+            if (isGuest && customer.ShippingAddressId.HasValue)
+            {
+                var guestAddress = await _addressService.GetAddressByIdAsync(customer.ShippingAddressId.Value);
+                if (guestAddress != null)
+                {
+                    customer.FirstName = guestAddress.FirstName;
+                    customer.LastName = guestAddress.LastName;
+                }
             }
 
             var cartTotalResult = await _orderTotalCalculationService.GetShoppingCartTotalAsync(cart);
