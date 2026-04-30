@@ -22,16 +22,18 @@ public class IyzipayDataMapper
     private readonly ICustomerService _customerService;
     private readonly IProductService _productService;
     private readonly IShoppingCartService _shoppingCartService;
+    private readonly IOrderTotalCalculationService _orderTotalCalculationService;
 
     #endregion
 
     #region Ctor
 
-    public IyzipayDataMapper(ICustomerService customerService, IProductService productService, IShoppingCartService shoppingCartService)
+    public IyzipayDataMapper(ICustomerService customerService, IProductService productService, IShoppingCartService shoppingCartService, IOrderTotalCalculationService orderTotalCalculationService)
     {
         _customerService = customerService;
         _productService = productService;
         _shoppingCartService = shoppingCartService;
+        _orderTotalCalculationService = orderTotalCalculationService;
     }
 
     #endregion
@@ -88,6 +90,20 @@ public class IyzipayDataMapper
                 Category2 = "Alt Kategori",
                 ItemType = BasketItemType.PHYSICAL.ToString(),
                 Price = itemTotalPrice.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)
+            });
+        }
+
+        var shippingResult = await _orderTotalCalculationService.GetShoppingCartShippingTotalAsync(cart);
+        if (shippingResult.shippingTotal.HasValue && shippingResult.shippingTotal.Value > 0)
+        {
+            basketItems.Add(new BasketItem
+            {
+                Id = "0",
+                Name = "Kargo",
+                Category1 = "Kategori",
+                Category2 = "Alt Kategori",
+                ItemType = BasketItemType.VIRTUAL.ToString(),
+                Price = shippingResult.shippingTotal.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)
             });
         }
 

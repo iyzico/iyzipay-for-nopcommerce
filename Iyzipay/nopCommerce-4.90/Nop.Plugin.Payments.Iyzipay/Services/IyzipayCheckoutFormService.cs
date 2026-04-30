@@ -169,6 +169,12 @@ public class IyzipayCheckoutFormService
                 }
             }
 
+            // iyzico requires Price/PaidPrice to equal the sum of basketItems[].Price
+            var basketTotal = request.BasketItems.Sum(item =>
+                decimal.TryParse(item.Price, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var p) ? p : 0);
+            request.Price = basketTotal.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+            request.PaidPrice = basketTotal.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+
             request.ShippingAddress = _dataMapper.CreateShippingAddressFromCustomer(customer);
             request.BillingAddress = _dataMapper.CreateBillingAddressFromCustomer(customer);
 
