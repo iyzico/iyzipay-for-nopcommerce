@@ -93,8 +93,8 @@ public class IyzipayDataMapper
             });
         }
 
-        var shippingResult = await _orderTotalCalculationService.GetShoppingCartShippingTotalAsync(cart);
-        if (shippingResult.shippingTotal.HasValue && shippingResult.shippingTotal.Value > 0)
+        var shippingTotal = await _orderTotalCalculationService.GetShoppingCartShippingTotalAsync(cart);
+        if (shippingTotal.HasValue && shippingTotal.Value > 0)
         {
             basketItems.Add(new BasketItem
             {
@@ -103,7 +103,7 @@ public class IyzipayDataMapper
                 Category1 = "Kategori",
                 Category2 = "Alt Kategori",
                 ItemType = BasketItemType.VIRTUAL.ToString(),
-                Price = shippingResult.shippingTotal.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)
+                Price = shippingTotal.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)
             });
         }
 
