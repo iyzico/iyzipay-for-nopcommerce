@@ -500,7 +500,7 @@ public class IyzipayPaymentProcessor : BasePlugin, IPaymentMethod
 
 
             order.PaymentStatus = PaymentStatus.Paid;
-            order.OrderStatus = OrderStatus.Complete;
+            order.OrderStatus = (OrderStatus)_iyzipayPaymentSettings.OrderStatusAfterPayment;
             order.PaidDateUtc = DateTime.UtcNow;
 
             order.AuthorizationTransactionId = paymentId;
@@ -606,7 +606,7 @@ public class IyzipayPaymentProcessor : BasePlugin, IPaymentMethod
             }
 
             order.PaymentStatus = PaymentStatus.Paid;
-            order.OrderStatus = OrderStatus.Complete;
+            order.OrderStatus = (OrderStatus)_iyzipayPaymentSettings.OrderStatusAfterPayment;
             order.PaidDateUtc = DateTime.UtcNow;
 
             order.AuthorizationTransactionId = callbackData.PaymentId;
